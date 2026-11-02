@@ -1,0 +1,121 @@
+@import "tailwindcss";
+
+/*
+ * デザイントークン
+ * 美容ブランド向けに、温かみのある生成り色の地と、墨色の文字、落ち着いた朱を基調にする。
+ * チャートの配色（own / rival）は色覚多様性の検証スクリプトで確認済み（light/dark）。
+ */
+:root {
+  --bg: #fbf8f3;
+  --surface: #ffffff;
+  --surface-muted: #f3eee6;
+  --ink: #1f1a17;
+  --ink-2: #4a423c;
+  --ink-3: #6f665e;
+  --line: #e4ddd2;
+  --line-strong: #cfc5b7;
+  --accent: #8e3b2f;
+  --accent-ink: #ffffff;
+  --accent-soft: #f4e6e1;
+  --focus: #1f5fa8;
+  --danger: #a12a1f;
+  --danger-soft: #fbe9e6;
+  --warn: #8a5a00;
+  --warn-soft: #fbf1dc;
+  --info: #31597d;
+  --info-soft: #e7eff6;
+  --chart-own: #a4473a;
+  --chart-rival: #2f6fb5;
+  --mark: #fde7a6;
+}
+
+:root:not([data-theme="light"]) {
+  color-scheme: light dark;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #171412;
+    --surface: #1f1b18;
+    --surface-muted: #28231f;
+    --ink: #f3ede6;
+    --ink-2: #d4cbc1;
+    --ink-3: #a99f95;
+    --line: #3a332d;
+    --line-strong: #4d453d;
+    --accent: #d98b79;
+    --accent-ink: #1a1210;
+    --accent-soft: #3a2621;
+    --focus: #8ab8ec;
+    --danger: #f08a7d;
+    --danger-soft: #3d2420;
+    --warn: #e8bd6a;
+    --warn-soft: #3a2f1b;
+    --info: #9cc1e4;
+    --info-soft: #1f2d3a;
+    --chart-own: #c8705e;
+    --chart-rival: #5b95d6;
+    --mark: #5a4a1c;
+  }
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-accent-soft: var(--accent-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
+  --color-warn: var(--warn);
+  --color-warn-soft: var(--warn-soft);
+  --color-info: var(--info);
+  --color-info-soft: var(--info-soft);
+  --color-chart-own: var(--chart-own);
+  --color-chart-rival: var(--chart-rival);
+  --font-sans: var(--font-sans-jp), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+  --font-serif: var(--font-serif-jp), "Hiragino Mincho ProN", "Yu Mincho", serif;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  line-height: 1.75;
+  letter-spacing: 0.02em;
+  font-feature-settings: "palt" 0;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+mark {
+  background: var(--mark);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+::selection {
+  background: var(--accent-soft);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

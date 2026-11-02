@@ -6,3 +6,8 @@ ChatGPTやGeminiが自社の化粧品を薦めているかを、美容に特化�
 - [市場調査](docs/research/market-research.md)
 - [アプリ案の評価（改訂版）](docs/product/idea-evaluation.md)
 - [プロダクトコンセプト（承認待ち）](docs/product/product-concept.md)
+
+## アプリ（試作版・AIのAPI不使用）
+- ソース：[web/](web/)（起動方法は [web/README.md](web/README.md)）
+- [設計判断の記録](docs/architecture/architecture-decisions.md)
+- [テスト結果](docs/quality/test-report.md)
