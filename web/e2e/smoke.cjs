@@ -42,6 +42,21 @@ async function shot(page, name) {
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth + 1);
     check(!overflow, "横スクロールが発生しない");
     await shot(page, `${vp.name}-01-top`);
+    check(await page.getByRole("heading", { name: "料金" }).isVisible(), "料金が表示される");
+
+    // 1b. 無料診断（APIキーが無い環境では「準備中」を正直に表示し、偽の結果を出さない）
+    await page.getByRole("link", { name: "自社ブランドを無料で診断" }).click();
+    await page.waitForURL("**/diagnosis");
+    const keysConfigured = process.env.EXPECT_DIAGNOSIS === "1";
+    await page.locator("[aria-busy='true']").waitFor({ state: "detached", timeout: 10000 }).catch(() => {});
+    if (keysConfigured) {
+      check(await page.getByRole("button", { name: "無料で診断する" }).isVisible(), "診断フォームが表示される");
+    } else {
+      check(await page.getByText("現在準備中です").isVisible(), "キー未設定時は準備中と表示される");
+      check((await page.getByRole("button", { name: "無料で診断する" }).count()) === 0, "キー未設定時は診断ボタンを出さない");
+      check(await page.getByRole("link", { name: "無料の記録ツールを使う" }).isVisible(), "代わりの記録ツールへ案内する");
+    }
+    await shot(page, `${vp.name}-01b-diagnosis`);
 
     // 2. 未設定でレポートを開くと設定を促す
     await page.goto(BASE + "/app/report");
