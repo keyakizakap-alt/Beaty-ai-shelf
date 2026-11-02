@@ -130,7 +130,7 @@ export function DiagnosisView() {
                 {running ? "AIに質問しています…（1分ほどかかります）" : "無料で診断する"}
               </Button>
               <p className="mt-3 text-xs text-ink-3">
-                質問先：{status.engines.join("、")}。入力したブランド名と質問文は、回答を得るためにこれらのAIの提供元へ送信されます。診断結果は保存しません。
+                質問先：{status.engines.join("、")}。AIに送るのは、カテゴリと悩みから作った一般的な質問文だけで、ブランド名は送りません。ブランド名は回答の中から探すためだけに使い、診断結果とあわせて保存しません。
               </p>
             </div>
           </form>

@@ -4,7 +4,7 @@ const { chromium } = require("playwright");
 const axePath = require.resolve("axe-core/axe.min.js");
 
 const BASE = process.env.BASE_URL || "http://localhost:3100";
-const PAGES = ["/", "/diagnosis", "/app", "/app/setup", "/app/questions", "/app/record", "/app/report", "/app/check", "/app/data", "/terms", "/privacy"];
+const PAGES = ["/", "/diagnosis", "/app", "/app/setup", "/app/questions", "/app/record", "/app/report", "/app/check", "/app/data", "/terms", "/privacy", "/security"];
 
 (async () => {
   const browser = await chromium.launch();

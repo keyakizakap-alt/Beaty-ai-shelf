@@ -19,6 +19,9 @@ export function emptyWorkspace(): Workspace {
   };
 }
 
+/** 読み込みを受け付ける件数の上限（画面の上限と同じ。巨大なファイルによる動作停止を防ぐ） */
+export const LIMITS = { brands: 11, questions: 50, observations: 2000 };
+
 const ENGINE_IDS: EngineId[] = ["chatgpt", "gemini", "claude", "perplexity", "other"];
 const isStr = (v: unknown): v is string => typeof v === "string";
 const isStrArr = (v: unknown): v is string[] => Array.isArray(v) && v.every(isStr);
@@ -30,6 +33,9 @@ export function parseWorkspace(raw: unknown): { ok: true; value: Workspace } | {
   if (w.version !== 1) return { ok: false, error: "対応していないデータのバージョンです。" };
 
   if (!Array.isArray(w.brands)) return { ok: false, error: "ブランドの情報がありません。" };
+  if (w.brands.length > LIMITS.brands) return { ok: false, error: "ブランドの数が多すぎます。" };
+  if (Array.isArray(w.questions) && w.questions.length > LIMITS.questions) return { ok: false, error: "質問の数が多すぎます。" };
+  if (Array.isArray(w.observations) && w.observations.length > LIMITS.observations) return { ok: false, error: "記録の数が多すぎます。" };
   const brands: Brand[] = [];
   for (const b of w.brands as Record<string, unknown>[]) {
     if (!b || !isStr(b.id) || !isStr(b.name) || !isStrArr(b.aliases) || typeof b.isOwn !== "boolean") {

@@ -53,6 +53,25 @@ const plans = [
   },
 ];
 
+const securityPoints = [
+  {
+    title: "ブランド名をAIに送らない",
+    body: "無料診断でAIの提供元に送るのは、一般的な質問文だけです。ブランド名や競合名は送りません。",
+  },
+  {
+    title: "記録はブラウザの中だけに",
+    body: "記録ツールのデータは、お使いのブラウザの中だけに保存され、運営者のサーバーには送信されません。",
+  },
+  {
+    title: "学習に使われない有料APIのみ",
+    body: "AIは各社の有料APIだけを使います。各社とも、送信内容をモデルの学習に使わないとしています。",
+  },
+  {
+    title: "許可したもの以外は動かさない",
+    body: "外部のスクリプトや解析タグを読み込まず、許可したスクリプト以外は実行できない設定にしています。",
+  },
+];
+
 const faqs = [
   {
     q: "AIの回答は毎回変わるのに、測る意味はありますか。",
@@ -68,7 +87,7 @@ const faqs = [
   },
   {
     q: "入力したデータはどこに保存されますか。",
-    a: "無料の記録ツールでは、データはお使いのブラウザの中だけに保存され、運営者のサーバーには送信されません。無料診断では、回答を得るために質問文とブランド名をAIの提供元へ送信しますが、診断結果は保存しません。",
+    a: "無料の記録ツールでは、データはお使いのブラウザの中だけに保存され、運営者のサーバーには送信されません。無料診断でAIの提供元に送るのは一般的な質問文だけで、ブランド名は送りません。診断結果も保存しません。詳しくは「セキュリティへの取り組み」をご覧ください。",
   },
 ];
 
@@ -174,7 +193,33 @@ export default function Home() {
           </div>
         </section>
 
-        <section aria-labelledby="faq" className="border-t border-line">
+        <section aria-labelledby="security" className="border-t border-line">
+          <div className="mx-auto grid max-w-6xl gap-10 px-4 py-20 sm:px-6 md:grid-cols-[1fr_1.6fr]">
+            <div>
+              <h2 id="security" className="font-serif text-2xl font-semibold leading-snug tracking-wide">
+                預からないことで、
+                <br />
+                守る設計
+              </h2>
+              <p className="mt-4 text-sm leading-loose text-ink-2">
+                ブランドの戦略や競合の情報は、企業にとって大切な情報です。必要以上のデータを預からないことを基本に設計しています。
+              </p>
+              <Link href="/security" className="mt-6 inline-block text-sm font-medium text-accent underline underline-offset-4">
+                セキュリティへの取り組みを見る
+              </Link>
+            </div>
+            <dl className="grid gap-8 sm:grid-cols-2">
+              {securityPoints.map((p) => (
+                <div key={p.title}>
+                  <dt className="font-bold">{p.title}</dt>
+                  <dd className="mt-2 text-sm leading-loose text-ink-2">{p.body}</dd>
+                </div>
+              ))}
+            </dl>
+          </div>
+        </section>
+
+        <section aria-labelledby="faq" className="border-t border-line bg-surface">
           <div className="mx-auto max-w-3xl px-4 py-20 sm:px-6">
             <h2 id="faq" className="font-serif text-2xl font-semibold tracking-wide">
               よくある質問
@@ -190,7 +235,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="border-t border-line bg-surface">
+        <section className="border-t border-line">
           <div className="mx-auto flex max-w-6xl flex-col items-start gap-6 px-4 py-16 sm:flex-row sm:items-center sm:justify-between sm:px-6">
             <p className="font-serif text-xl font-semibold">まずは、自社ブランドの今を確かめてください。</p>
             <ButtonLink href="/diagnosis">無料で診断する</ButtonLink>

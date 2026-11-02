@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Noto_Sans_JP, Noto_Serif_JP } from "next/font/google";
+import { connection } from "next/server";
 import "./globals.css";
 
 const sans = Noto_Sans_JP({
@@ -32,7 +33,12 @@ export const viewport: Viewport = {
   ],
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+// CSP の nonce のため全ページをリクエスト時に描画する（静的な先行描画はしない）
+export const instant = false;
+
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // CSP の nonce をリクエストごとに埋め込むため、すべてのページをリクエスト時に描画する
+  await connection();
   return (
     <html lang="ja" className={`${sans.variable} ${serif.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>

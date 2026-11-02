@@ -10,4 +10,5 @@ ChatGPTやGeminiが自社の化粧品を薦めているかを、美容に特化�
 ## アプリ（試作版・AIのAPI不使用）
 - ソース：[web/](web/)（起動方法は [web/README.md](web/README.md)）
 - [設計判断の記録](docs/architecture/architecture-decisions.md)
+- [セキュリティ設計](docs/architecture/security-design.md)・[SECURITY.md](SECURITY.md)
 - [テスト結果](docs/quality/test-report.md)

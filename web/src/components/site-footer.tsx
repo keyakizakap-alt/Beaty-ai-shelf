@@ -8,6 +8,11 @@ export function SiteFooter() {
         <nav aria-label="フッター">
           <ul className="flex gap-5">
             <li>
+              <Link href="/security" className="hover:text-ink">
+                セキュリティ
+              </Link>
+            </li>
+            <li>
               <Link href="/terms" className="hover:text-ink">
                 利用規約
               </Link>

@@ -2,9 +2,12 @@ import { connection } from "next/server";
 import { runDiagnosis, validateDiagnosisInput } from "@/lib/diagnosis";
 import { getConfiguredEngines } from "@/lib/engines/registry";
 import { RateLimiter } from "@/lib/rate-limit";
+import { clientIp, hashForLog, isSameOrigin, logEvent, readJsonLimited } from "@/lib/security";
 
 // 6問 × AIの数を並列で聞くため、余裕をもたせる（実行上限はデプロイ先の設定にも依存する）
 export const maxDuration = 120;
+
+const MAX_BODY_BYTES = 10_000;
 
 const intEnv = (v: string | undefined, d: number) => {
   const n = Number(v);
@@ -17,75 +20,92 @@ const limiter = new RateLimiter(
   intEnv(process.env.DIAGNOSIS_DAILY_LIMIT, 50),
 );
 
-function json(body: unknown, status = 200) {
-  return Response.json(body, { status, headers: { "Cache-Control": "no-store" } });
+function json(body: Record<string, unknown>, status: number, requestId: string) {
+  return Response.json(
+    { ...body, requestId },
+    { status, headers: { "Cache-Control": "no-store", "X-Request-Id": requestId } },
+  );
 }
 
 /** 診断が使えるか（どのAIに接続できるか）を返す。キーの値は返さない */
 export async function GET() {
   await connection();
   const engines = getConfiguredEngines();
-  return json({ available: engines.length > 0, engines: engines.map((e) => e.label) });
+  return Response.json(
+    { available: engines.length > 0, engines: engines.map((e) => e.label) },
+    { headers: { "Cache-Control": "no-store" } },
+  );
 }
 
 export async function POST(request: Request) {
   await connection();
+  const requestId = crypto.randomUUID();
+  const started = Date.now();
+  const ip = clientIp(request.headers);
+  const ipHash = await hashForLog(ip);
+  const fail = (status: number, error: string, message: string) => {
+    logEvent("diagnosis", { requestId, ipHash, status, error, ms: Date.now() - started });
+    return json({ error, message }, status, requestId);
+  };
+
+  // 別サイトからの送信を拒否する（CSRF・不正利用対策）。他の判定より先に行う
+  if (!isSameOrigin(request.headers)) return fail(403, "forbidden", "このページからのみ利用できます。");
+
   const engines = getConfiguredEngines();
-  if (engines.length === 0) {
-    return json({ error: "unavailable", message: "無料診断は準備中です。" }, 503);
+  if (engines.length === 0) return fail(503, "unavailable", "無料診断は準備中です。");
+
+  if (!(request.headers.get("content-type") ?? "").toLowerCase().startsWith("application/json")) {
+    return fail(415, "unsupported_media_type", "入力の形式が正しくありません。");
   }
 
-  // 別サイトからの送信を拒否する（CSRF・不正利用対策）
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  let sameOrigin = false;
-  try {
-    sameOrigin = !!origin && !!host && new URL(origin).host === host;
-  } catch {
-    sameOrigin = false;
+  // 本文は上限を超えた時点で読むのをやめる（Content-Length を偽った大きな送信への対策）
+  const read = await readJsonLimited(request, MAX_BODY_BYTES);
+  if (!read.ok) {
+    return read.reason === "too_large"
+      ? fail(413, "too_large", "入力が大きすぎます。")
+      : fail(400, "bad_request", "入力の形式が正しくありません。");
   }
-  if (!sameOrigin) {
-    return json({ error: "forbidden", message: "このページからのみ利用できます。" }, 403);
-  }
-
-  const contentLength = Number(request.headers.get("content-length") ?? 0);
-  if (contentLength > 10_000) return json({ error: "too_large", message: "入力が大きすぎます。" }, 413);
-
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "bad_request", message: "入力の形式が正しくありません。" }, 400);
-  }
+  const body = read.value;
 
   // ボット対策：人には見えない入力欄に値が入っていたら受け付けない
   if (body && typeof body === "object" && (body as Record<string, unknown>).website) {
-    return json({ error: "bad_request", message: "送信できませんでした。" }, 400);
+    return fail(400, "bad_request", "送信できませんでした。");
   }
 
   const parsed = validateDiagnosisInput(body);
-  if (!parsed.ok) return json({ error: "invalid", message: parsed.error }, 400);
+  if (!parsed.ok) return fail(400, "invalid", parsed.error);
 
-  const ip = request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown";
   const rl = limiter.check(ip);
   if (!rl.ok) {
-    return json(
-      {
-        error: "rate_limited",
-        message:
-          rl.reason === "daily"
-            ? "本日の無料診断の受付数が上限に達しました。明日あらためてお試しください。"
-            : "短時間に続けて診断できる回数を超えました。1時間ほどしてからお試しください。",
-      },
+    return fail(
       429,
+      "rate_limited",
+      rl.reason === "daily"
+        ? "本日の無料診断の受付数が上限に達しました。明日あらためてお試しください。"
+        : "短時間に続けて診断できる回数を超えました。1時間ほどしてからお試しください。",
     );
   }
 
-  const result = await runDiagnosis(parsed.value, engines, {
-    questionCount: intEnv(process.env.DIAGNOSIS_QUESTIONS, 6),
-  });
-  if (result.answers.length === 0) {
-    return json({ error: "engines_failed", message: "AIからの回答を取得できませんでした。時間をおいてお試しください。" }, 502);
+  try {
+    const result = await runDiagnosis(parsed.value, engines, {
+      questionCount: intEnv(process.env.DIAGNOSIS_QUESTIONS, 6),
+    });
+    if (result.answers.length === 0) {
+      logEvent("diagnosis", { requestId, ipHash, status: 502, failures: result.failures, ms: Date.now() - started });
+      return json({ error: "engines_failed", message: "AIからの回答を取得できませんでした。時間をおいてお試しください。" }, 502, requestId);
+    }
+    // ログにはブランド名や回答本文を残さない（企業の機密になりうるため）
+    logEvent("diagnosis", {
+      requestId,
+      ipHash,
+      status: 200,
+      answers: result.answers.length,
+      failures: result.failures,
+      ms: Date.now() - started,
+    });
+    return json({ ...result }, 200, requestId);
+  } catch {
+    // 内部のエラー内容は利用者に返さない
+    return fail(500, "internal", "診断中に問題が発生しました。時間をおいてお試しください。");
   }
-  return json(result);
 }

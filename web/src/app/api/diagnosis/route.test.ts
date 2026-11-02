@@ -42,7 +42,9 @@ describe("/api/diagnosis", () => {
     expect(res.status).toBe(503);
   });
 
-  it("別サイトからのPOSTは403", async () => {
+  it("別サイトからのPOSTは、キーの有無にかかわらず403", async () => {
+    const noKey = await loadRoute({});
+    expect((await noKey.POST(post({ brand: "x" }, { origin: "https://evil.example" }))).status).toBe(403);
     const { POST } = await loadRoute({ GEMINI_API_KEY: "k" });
     const res = await POST(post({ brand: "x", category: "化粧水", concern: "乾燥" }, { origin: "https://evil.example" }));
     expect(res.status).toBe(403);
@@ -52,6 +54,20 @@ describe("/api/diagnosis", () => {
     const { POST } = await loadRoute({ GEMINI_API_KEY: "k" });
     expect((await POST(post({ brand: "", category: "化粧水", concern: "乾燥" }))).status).toBe(400);
     expect((await POST(post({ brand: "x", category: "化粧水", concern: "乾燥", website: "http://spam" }))).status).toBe(400);
+  });
+
+  it("JSON 以外の形式は415、応答に内部情報やキーを含めない", async () => {
+    const { POST } = await loadRoute({ GEMINI_API_KEY: "secret-key" });
+    const res = await POST(
+      new Request("http://localhost:3000/api/diagnosis", {
+        method: "POST",
+        headers: { "Content-Type": "text/plain", origin: "http://localhost:3000", host: "localhost:3000" },
+        body: "brand=x",
+      }),
+    );
+    expect(res.status).toBe(415);
+    expect(res.headers.get("x-request-id")).toBeTruthy();
+    expect(await res.text()).not.toContain("secret-key");
   });
 
   it("同じ送信元からの4回目は429（外部APIは呼ばない）", async () => {

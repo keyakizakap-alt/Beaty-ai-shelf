@@ -155,6 +155,29 @@ describe("runDiagnosis", () => {
     expect(res.topDomains[0]).toEqual({ domain: "cosme.example.jp", count: 6 });
   });
 
+  it("AIの提供元に送る質問文に、ブランド名・競合名を含めない", async () => {
+    const sent: string[] = [];
+    const spy: Engine = {
+      id: "chatgpt",
+      label: "spy",
+      async ask(q) {
+        sent.push(q);
+        return { text: "回答", citations: [] };
+      },
+    };
+    await runDiagnosis(
+      { brand: "社外秘ブランドX", aliases: ["SECRET-X"], competitors: ["競合Y"], category: "美容液", concern: "毛穴" },
+      [spy],
+      { questionCount: 6 },
+    );
+    expect(sent.length).toBe(6);
+    for (const q of sent) {
+      expect(q).not.toContain("社外秘ブランドX");
+      expect(q).not.toContain("SECRET-X");
+      expect(q).not.toContain("競合Y");
+    }
+  });
+
   it("一部のAIが失敗しても、取得できた回答だけで集計する", async () => {
     const res = await runDiagnosis(
       { brand: "ミナモ", aliases: [], competitors: [], category: "化粧水", concern: "乾燥" },

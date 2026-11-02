@@ -43,6 +43,11 @@ async function shot(page, name) {
     check(!overflow, "横スクロールが発生しない");
     await shot(page, `${vp.name}-01-top`);
     check(await page.getByRole("heading", { name: "料金" }).isVisible(), "料金が表示される");
+    await page.getByRole("link", { name: "セキュリティへの取り組みを見る" }).click();
+    await page.waitForURL("**/security");
+    check(await page.getByRole("heading", { name: "2. AIを利用する際の安全対策" }).isVisible(), "セキュリティのページが表示される");
+    await shot(page, `${vp.name}-00-security`);
+    await page.goto(BASE + "/");
 
     // 1b. 無料診断（APIキーが無い環境では「準備中」を正直に表示し、偽の結果を出さない）
     await page.getByRole("link", { name: "自社ブランドを無料で診断" }).click();
@@ -60,7 +65,9 @@ async function shot(page, name) {
 
     // 2. 未設定でレポートを開くと設定を促す
     await page.goto(BASE + "/app/report");
-    check(await page.getByText("まず、自社ブランドと競合ブランドを設定してください").isVisible(), "未設定時は設定を促す");
+    const prompt = page.getByText("まず、自社ブランドと競合ブランドを設定してください");
+    await prompt.waitFor({ timeout: 10000 }).catch(() => {});
+    check(await prompt.isVisible(), "未設定時は設定を促す");
 
     // 3. ブランド設定（入力エラー → 正常）
     await page.goto(BASE + "/app/setup");
