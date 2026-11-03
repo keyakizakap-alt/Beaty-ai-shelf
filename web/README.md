@@ -13,6 +13,9 @@
 ## 無料診断（AIへの自動の質問）
 `.env.example` を参考に、ローカルでは `.env.local`、本番では Vercel の環境変数に `OPENAI_API_KEY` / `GEMINI_API_KEY` を設定すると有効になります。キーが無い場合は「準備中」と表示されます。各社の管理画面で利用上限も設定してください。
 
+## デプロイ
+Vercel ではプロジェクトの **Root Directory を `web`** にしてください。詳しくは [デプロイ・運用手順書](../docs/operations/deploy-runbook.md)。
+
 ## 開発
 ```bash
 npm ci

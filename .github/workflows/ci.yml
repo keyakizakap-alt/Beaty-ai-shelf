@@ -9,17 +9,23 @@ on:
 permissions:
   contents: read
 
+# 同じブランチで新しい実行が始まったら、古い実行は止める
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   web:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: web
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
         with:
           node-version: 22
           cache: npm
@@ -28,6 +34,7 @@ jobs:
       # 依存ライブラリの既知の脆弱性（中程度以上）があれば失敗させる
       - run: npm audit --audit-level=moderate
       - run: npm run lint
+      # next typegen で Next.js の型定義を生成してから型検査する（生成物は Git に含めない）
       - run: npm run typecheck
       - run: npm test
       - run: npm run build

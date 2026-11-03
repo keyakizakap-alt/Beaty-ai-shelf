@@ -22,6 +22,9 @@ const nextConfig: NextConfig = {
   partialPrefetching: true,
   // フレームワーク名を応答ヘッダーに出さない
   poweredByHeader: false,
+  // 画像最適化機能（/_next/image）は使っていないため無効化し、攻撃を受けうる範囲を減らす。
+  // 2026年10月に画像最適化の上流ライブラリで重大な脆弱性（CVE-2026-96889）が公表されている。
+  images: { unoptimized: true },
   turbopack: {
     rules: {
       "*.css": {
