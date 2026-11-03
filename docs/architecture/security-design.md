@@ -38,7 +38,9 @@
 | 無制限の消費（LLM10） | 回数制限、同時実行数6、1呼び出し45秒で打ち切り | `rate-limit.ts`、`diagnosis.ts` | `diagnosis.test.ts`（時間切れ） |
 | CSVインジェクション | `= + - @` で始まる値を無害化 | `src/lib/csv.ts` | — |
 | 読み込みデータの改ざん | 型・値の検証、言及は保存値を使わず再計算 | `parseWorkspace` | `core.test.ts` |
-| 依存ライブラリの脆弱性 | CIで `npm audit --audit-level=moderate`、Dependabot、CodeQL | `.github/` | CI |
+| 依存ライブラリの脆弱性 | CIで `npm audit --audit-level=moderate`、Dependabot、CodeQL。Next.js の月例セキュリティリリースに追従（[運用手順書](../operations/deploy-runbook.md)） | `.github/` | CI |
+| 未使用機能を狙った攻撃 | 画像最適化（`/_next/image`）を無効化。Server Actions・`use cache` は使わない | `next.config.ts` | 404 を確認 |
+| CIの部品の改ざん（サプライチェーン） | GitHub Actions をタグではなくコミットIDで固定 | `.github/workflows/` | — |
 | CIの権限悪用 | ワークフローを読み取り権限のみ、`persist-credentials: false` | `.github/workflows/` | — |
 
 ## 4. HTTPセキュリティヘッダー（全ページ）
@@ -65,7 +67,16 @@
 | 脆弱性の報告窓口 | `SECURITY_CONTACT`（mailto: または https:）を設定すると `/.well-known/security.txt` と `/security` に表示 |
 | ログ | `LOG_SALT` を設定し、IPのハッシュを推測されにくくする |
 
-## 6. 残るリスクと今後の対策
+## 6. 公表済みの脆弱性への対応状況（2026-11-03）
+| 公表日 | 内容 | 本アプリへの影響 | 対応 |
+|---|---|---|---|
+| 2026-10-14 | Next.js：`use cache` の RCE（GHSA-673q-mjm6-r5xr、Critical）、画像最適化の RCE（CVE-2026-96889、Critical）、Server Actions の DoS（GHSA-p3m5-59mp-jv5r、High） | Cache Components を有効にしているため対象だった | 16.4.1 以降で修正。16.4.4 に更新済み。画像最適化は無効化、Server Actions は不使用 |
+| 2026-10-14 | React：RSC の RCE（GHSA-xqc2-xf4c-x3h3、Critical）、Server Functions の DoS（GHSA-h3gv-c5rc-p453、High） | Next.js 同梱のサーバー部品が対象 | Next.js 16.4.1 以降で修正。react / react-dom も 19.3.1 に更新 |
+| 2026-11-03 予定 | Next.js 月例セキュリティリリース（Medium 7件） | 詳細は未公表 | **確認時点で未公開**。公開後すぐ更新する |
+
+出典：Next.js 公式ブログ（https://nextjs.org/blog/nextjs-security-update-october-14-2026、https://nextjs.org/blog/upcoming-nextjs-security-release-november-2026）、React の GitHub 勧告。いずれも 2026-11-03 取得。
+
+## 7. 残るリスクと今後の対策
 | リスク | 現状 | 対策（予定） |
 |---|---|---|
 | 回数制限がインスタンスごと | 複数インスタンスでは合計が上限を超えうる | Upstash Redis 等の共有ストア、または Vercel Firewall のレート制限・BotID |
